@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ class Game;
 class Tile;
 class Map;
 
-#define MAP_MAX_LAYERS 16
+static constexpr int32_t MAP_MAX_LAYERS = 16;
 
 struct FindPathParams;
 struct AStarNode {
@@ -45,10 +45,10 @@ struct AStarNode {
 	uint16_t x, y;
 };
 
-#define MAX_NODES 512
+static constexpr int32_t MAX_NODES = 512;
 
-#define MAP_NORMALWALKCOST 10
-#define MAP_DIAGONALWALKCOST 25
+static constexpr int32_t MAP_NORMALWALKCOST = 10;
+static constexpr int32_t MAP_DIAGONALWALKCOST = 25;
 
 class AStarNodes
 {
@@ -73,11 +73,11 @@ class AStarNodes
 		int_fast32_t closedNodes;
 };
 
-typedef std::map<Position, SpectatorVec> SpectatorCache;
+using SpectatorCache = std::map<Position, SpectatorHashSet>;
 
-#define FLOOR_BITS 3
-#define FLOOR_SIZE (1 << FLOOR_BITS)
-#define FLOOR_MASK (FLOOR_SIZE - 1)
+static constexpr int32_t FLOOR_BITS = 3;
+static constexpr int32_t FLOOR_SIZE = (1 << FLOOR_BITS);
+static constexpr int32_t FLOOR_MASK = (FLOOR_SIZE - 1);
 
 struct Floor {
 	constexpr Floor() = default;
@@ -110,7 +110,7 @@ class QTreeNode
 		QTreeLeafNode* getLeaf(uint32_t x, uint32_t y);
 
 		template<typename Leaf, typename Node>
-		inline static Leaf getLeafStatic(Node node, uint32_t x, uint32_t y)
+		static Leaf getLeafStatic(Node node, uint32_t x, uint32_t y)
 		{
 			do {
 				node = node->child[((x & 0x8000) >> 15) | ((y & 0x8000) >> 14)];
@@ -127,9 +127,10 @@ class QTreeNode
 		QTreeLeafNode* createLeaf(uint32_t x, uint32_t y, uint32_t level);
 
 	protected:
-		QTreeNode* child[4] = {};
-
 		bool leaf = false;
+
+	private:
+		QTreeNode* child[4] = {};
 
 		friend class Map;
 };
@@ -152,7 +153,7 @@ class QTreeLeafNode final : public QTreeNode
 		void addCreature(Creature* c);
 		void removeCreature(Creature* c);
 
-	protected:
+	private:
 		static bool newLeaf;
 		QTreeLeafNode* leafS = nullptr;
 		QTreeLeafNode* leafE = nullptr;
@@ -172,10 +173,10 @@ class QTreeLeafNode final : public QTreeNode
 class Map
 {
 	public:
-		static const int32_t maxViewportX = 11; //min value: maxClientViewportX + 1
-		static const int32_t maxViewportY = 11; //min value: maxClientViewportY + 1
-		static const int32_t maxClientViewportX = 8;
-		static const int32_t maxClientViewportY = 6;
+		static constexpr int32_t maxViewportX = 11; //min value: maxClientViewportX + 1
+		static constexpr int32_t maxViewportY = 11; //min value: maxClientViewportY + 1
+		static constexpr int32_t maxClientViewportX = 8;
+		static constexpr int32_t maxClientViewportY = 6;
 
 		uint32_t clean() const;
 
@@ -196,7 +197,7 @@ class Map
 		  * \returns A pointer to that tile.
 		  */
 		Tile* getTile(uint16_t x, uint16_t y, uint8_t z) const;
-		inline Tile* getTile(const Position& pos) const {
+		Tile* getTile(const Position& pos) const {
 			return getTile(pos.x, pos.y, pos.z);
 		}
 
@@ -219,7 +220,7 @@ class Map
 
 		void moveCreature(Creature& creature, Tile& newTile, bool forceTeleport = false);
 
-		void getSpectators(SpectatorVec& list, const Position& centerPos, bool multifloor = false, bool onlyPlayers = false,
+		void getSpectators(SpectatorHashSet& spectators, const Position& centerPos, bool multifloor = false, bool onlyPlayers = false,
 		                   int32_t minRangeX = 0, int32_t maxRangeX = 0,
 		                   int32_t minRangeY = 0, int32_t maxRangeY = 0);
 
@@ -262,7 +263,8 @@ class Map
 		Spawns spawns;
 		Towns towns;
 		Houses houses;
-	protected:
+
+	private:
 		SpectatorCache spectatorCache;
 		SpectatorCache playersSpectatorCache;
 
@@ -275,7 +277,7 @@ class Map
 		uint32_t height = 0;
 
 		// Actually scans the map for spectators
-		void getSpectatorsInternal(SpectatorVec& list, const Position& centerPos,
+		void getSpectatorsInternal(SpectatorHashSet& spectators, const Position& centerPos,
 		                           int32_t minRangeX, int32_t maxRangeX,
 		                           int32_t minRangeY, int32_t maxRangeY,
 		                           int32_t minRangeZ, int32_t maxRangeZ, bool onlyPlayers) const;

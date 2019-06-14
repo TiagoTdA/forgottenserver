@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,36 @@
 
 #ifndef FS_ENUMS_H_003445999FEE4A67BCECBE918B0124CE
 #define FS_ENUMS_H_003445999FEE4A67BCECBE918B0124CE
+
+enum RuleViolationType_t : uint8_t {
+	REPORT_TYPE_NAME = 0,
+	REPORT_TYPE_STATEMENT = 1,
+	REPORT_TYPE_BOT = 2
+};
+
+enum RuleViolationReasons_t : uint8_t {
+	REPORT_REASON_NAMEINAPPROPRIATE = 0,
+	REPORT_REASON_NAMEPOORFORMATTED = 1,
+	REPORT_REASON_NAMEADVERTISING = 2,
+	REPORT_REASON_NAMEUNFITTING = 3,
+	REPORT_REASON_NAMERULEVIOLATION = 4,
+	REPORT_REASON_INSULTINGSTATEMENT = 5,
+	REPORT_REASON_SPAMMING = 6,
+	REPORT_REASON_ADVERTISINGSTATEMENT = 7,
+	REPORT_REASON_UNFITTINGSTATEMENT = 8,
+	REPORT_REASON_LANGUAGESTATEMENT = 9,
+	REPORT_REASON_DISCLOSURE = 10,
+	REPORT_REASON_RULEVIOLATION = 11,
+	REPORT_REASON_STATEMENT_BUGABUSE = 12,
+	REPORT_REASON_UNOFFICIALSOFTWARE = 13,
+	REPORT_REASON_PRETENDING = 14,
+	REPORT_REASON_HARASSINGOWNERS = 15,
+	REPORT_REASON_FALSEINFO = 16,
+	REPORT_REASON_ACCOUNTSHARING = 17,
+	REPORT_REASON_STEALINGDATA = 18,
+	REPORT_REASON_SERVICEATTACKING = 19,
+	REPORT_REASON_SERVICEAGREEMENT = 20
+};
 
 enum BugReportType_t : uint8_t {
 	BUG_CATEGORY_MAP = 0,
@@ -59,6 +89,8 @@ enum itemAttrTypes : uint32_t {
 	ITEM_ATTRIBUTE_CHARGES = 1 << 20,
 	ITEM_ATTRIBUTE_FLUIDTYPE = 1 << 21,
 	ITEM_ATTRIBUTE_DOORID = 1 << 22,
+
+	ITEM_ATTRIBUTE_CUSTOM = 1U << 31
 };
 
 enum VipStatus_t : uint8_t {
@@ -121,6 +153,12 @@ enum SpellGroup_t : uint8_t {
 	SPELLGROUP_SPECIAL = 4,
 };
 
+enum SpellType_t : uint8_t {
+	SPELL_UNDEFINED = 0,
+	SPELL_INSTANT = 1,
+	SPELL_RUNE = 2,
+};
+
 enum AccountType_t : uint8_t {
 	ACCOUNT_TYPE_NORMAL = 1,
 	ACCOUNT_TYPE_TUTOR = 2,
@@ -138,7 +176,7 @@ enum RaceType_t : uint8_t {
 	RACE_ENERGY,
 };
 
-enum CombatType_t {
+enum CombatType_t : uint16_t {
 	COMBAT_NONE = 0,
 
 	COMBAT_PHYSICALDAMAGE = 1 << 0,
@@ -224,6 +262,13 @@ enum ConditionParam_t {
 	CONDITION_PARAM_BUFF_SPELL = 44,
 	CONDITION_PARAM_SUBID = 45,
 	CONDITION_PARAM_FIELD = 46,
+	CONDITION_PARAM_DISABLE_DEFENSE = 47,
+	CONDITION_PARAM_SPECIALSKILL_CRITICALHITCHANCE = 48,
+	CONDITION_PARAM_SPECIALSKILL_CRITICALHITAMOUNT = 49,
+	CONDITION_PARAM_SPECIALSKILL_LIFELEECHCHANCE = 50,
+	CONDITION_PARAM_SPECIALSKILL_LIFELEECHAMOUNT = 51,
+	CONDITION_PARAM_SPECIALSKILL_MANALEECHCHANCE = 52,
+	CONDITION_PARAM_SPECIALSKILL_MANALEECHAMOUNT = 53,
 };
 
 enum BlockType_t : uint8_t {
@@ -257,6 +302,18 @@ enum stats_t {
 
 	STAT_FIRST = STAT_MAXHITPOINTS,
 	STAT_LAST = STAT_MAGICPOINTS
+};
+
+enum SpecialSkills_t {
+	SPECIALSKILL_CRITICALHITCHANCE,
+	SPECIALSKILL_CRITICALHITAMOUNT,
+	SPECIALSKILL_LIFELEECHCHANCE,
+	SPECIALSKILL_LIFELEECHAMOUNT,
+	SPECIALSKILL_MANALEECHCHANCE,
+	SPECIALSKILL_MANALEECHAMOUNT,
+
+	SPECIALSKILL_FIRST = SPECIALSKILL_CRITICALHITCHANCE,
+	SPECIALSKILL_LAST = SPECIALSKILL_MANALEECHAMOUNT
 };
 
 enum formulaType_t {
@@ -385,10 +442,17 @@ enum ReturnValue {
 	RETURNVALUE_YOUNEEDAMAGICITEMTOCASTSPELL,
 	RETURNVALUE_CANNOTCONJUREITEMHERE,
 	RETURNVALUE_YOUNEEDTOSPLITYOURSPEARS,
-	RETURNVALUE_NAMEISTOOAMBIGIOUS,
+	RETURNVALUE_NAMEISTOOAMBIGUOUS,
 	RETURNVALUE_CANONLYUSEONESHIELD,
 	RETURNVALUE_NOPARTYMEMBERSINRANGE,
 	RETURNVALUE_YOUARENOTTHEOWNER,
+	RETURNVALUE_NOSUCHRAIDEXISTS,
+	RETURNVALUE_ANOTHERRAIDISALREADYEXECUTING,
+	RETURNVALUE_TRADEPLAYERFARAWAY,
+	RETURNVALUE_YOUDONTOWNTHISHOUSE,
+	RETURNVALUE_TRADEPLAYERALREADYOWNSAHOUSE,
+	RETURNVALUE_TRADEPLAYERHIGHESTBIDDER,
+	RETURNVALUE_YOUCANNOTTRADETHISHOUSE,
 };
 
 enum SpeechBubble_t
@@ -457,7 +521,7 @@ struct ShopInfo {
 	}
 
 	ShopInfo(uint16_t itemId, int32_t subType = 0, uint32_t buyPrice = 0, uint32_t sellPrice = 0, std::string realName = "")
-		: itemId(itemId), subType(subType), buyPrice(buyPrice), sellPrice(sellPrice), realName(realName) {}
+		: itemId(itemId), subType(subType), buyPrice(buyPrice), sellPrice(sellPrice), realName(std::move(realName)) {}
 };
 
 struct MarketOffer {
@@ -518,7 +582,7 @@ struct ModalWindow
 	bool priority;
 
 	ModalWindow(uint32_t id, std::string title, std::string message)
-		: title(title), message(message), id(id), defaultEnterButton(0xFF), defaultEscapeButton(0xFF), priority(false) {}
+		: title(std::move(title)), message(std::move(message)), id(id), defaultEnterButton(0xFF), defaultEscapeButton(0xFF), priority(false) {}
 };
 
 enum CombatOrigin
@@ -546,8 +610,8 @@ struct CombatDamage
 	}
 };
 
-typedef std::list<MarketOffer> MarketOfferList;
-typedef std::list<HistoryMarketOffer> HistoryMarketOfferList;
-typedef std::list<ShopInfo> ShopInfoList;
+using MarketOfferList = std::list<MarketOffer>;
+using HistoryMarketOfferList = std::list<HistoryMarketOffer>;
+using ShopInfoList = std::list<ShopInfo>;
 
 #endif

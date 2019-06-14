@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,9 +51,10 @@ void ProtocolLogin::getCharacterList(const std::string& accountName, const std::
 		return;
 	}
 
+	uint32_t ticks = time(nullptr) / AUTHENTICATOR_PERIOD;
+
 	auto output = OutputMessagePool::getOutputMessage();
 	if (!account.key.empty()) {
-		int32_t ticks = static_cast<int32_t>(time(nullptr) / AUTHENTICATOR_PERIOD);
 		if (token.empty() || !(token == generateToken(account.key, ticks) || token == generateToken(account.key, ticks - 1) || token == generateToken(account.key, ticks + 1))) {
 			output->addByte(0x0D);
 			output->addByte(0);
@@ -80,7 +81,7 @@ void ProtocolLogin::getCharacterList(const std::string& accountName, const std::
 
 	//Add session key
 	output->addByte(0x28);
-	output->addString(accountName + "\n" + password);
+	output->addString(accountName + "\n" + password + "\n" + token + "\n" + std::to_string(ticks));
 
 	//Add char list
 	output->addByte(0x64);
@@ -101,10 +102,13 @@ void ProtocolLogin::getCharacterList(const std::string& accountName, const std::
 	}
 
 	//Add premium days
+	output->addByte(0);
 	if (g_config.getBoolean(ConfigManager::FREE_PREMIUM)) {
-		output->add<uint16_t>(0xFFFF); //client displays free premium
+		output->addByte(1);
+		output->add<uint32_t>(0);
 	} else {
-		output->add<uint16_t>(account.premiumDays);
+		output->addByte(account.premiumDays > 0 ? 1 : 0);
+		output->add<uint32_t>(time(nullptr) + (account.premiumDays * 86400));
 	}
 
 	send(output);
@@ -135,7 +139,9 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 	 */
 
 	if (version <= 760) {
-		disconnectClient("Only clients with protocol " CLIENT_VERSION_STR " allowed!", version);
+		std::ostringstream ss;
+		ss << "Only clients with protocol " << CLIENT_VERSION_STR << " allowed!";
+		disconnectClient(ss.str(), version);
 		return;
 	}
 
@@ -144,16 +150,18 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 		return;
 	}
 
-	uint32_t key[4];
+	xtea::key key;
 	key[0] = msg.get<uint32_t>();
 	key[1] = msg.get<uint32_t>();
 	key[2] = msg.get<uint32_t>();
 	key[3] = msg.get<uint32_t>();
 	enableXTEAEncryption();
-	setXTEAKey(key);
+	setXTEAKey(std::move(key));
 
 	if (version < CLIENT_VERSION_MIN || version > CLIENT_VERSION_MAX) {
-		disconnectClient("Only clients with protocol " CLIENT_VERSION_STR " allowed!", version);
+		std::ostringstream ss;
+		ss << "Only clients with protocol " << CLIENT_VERSION_STR << " allowed!";
+		disconnectClient(ss.str(), version);
 		return;
 	}
 

@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@ struct MonsterSpawn {
 };
 
 //How many times it will try to find a tile to add the monster to before giving up
-#define MAXIMUM_TRIES_PER_MONSTER 10
-#define CHECK_RAIDS_INTERVAL 60
-#define RAID_MINTICKS 1000
+static constexpr int32_t MAXIMUM_TRIES_PER_MONSTER = 10;
+static constexpr int32_t CHECK_RAIDS_INTERVAL = 60;
+static constexpr int32_t RAID_MINTICKS = 1000;
 
 class Raid;
 class RaidEvent;
@@ -167,10 +167,6 @@ class RaidEvent
 			return delay;
 		}
 
-		static bool compareEvents(const RaidEvent* lhs, const RaidEvent* rhs) {
-			return lhs->getDelay() < rhs->getDelay();
-		}
-
 	private:
 		uint32_t delay;
 };
@@ -180,9 +176,9 @@ class AnnounceEvent final : public RaidEvent
 	public:
 		AnnounceEvent() = default;
 
-		bool configureRaidEvent(const pugi::xml_node& eventNode) final;
+		bool configureRaidEvent(const pugi::xml_node& eventNode) override;
 
-		bool executeEvent() final;
+		bool executeEvent() override;
 
 	private:
 		std::string message;
@@ -192,9 +188,9 @@ class AnnounceEvent final : public RaidEvent
 class SingleSpawnEvent final : public RaidEvent
 {
 	public:
-		bool configureRaidEvent(const pugi::xml_node& eventNode) final;
+		bool configureRaidEvent(const pugi::xml_node& eventNode) override;
 
-		bool executeEvent() final;
+		bool executeEvent() override;
 
 	private:
 		std::string monsterName;
@@ -204,9 +200,9 @@ class SingleSpawnEvent final : public RaidEvent
 class AreaSpawnEvent final : public RaidEvent
 {
 	public:
-		bool configureRaidEvent(const pugi::xml_node& eventNode) final;
+		bool configureRaidEvent(const pugi::xml_node& eventNode) override;
 
-		bool executeEvent() final;
+		bool executeEvent() override;
 
 	private:
 		std::list<MonsterSpawn> spawnList;
@@ -218,15 +214,15 @@ class ScriptEvent final : public RaidEvent, public Event
 	public:
 		explicit ScriptEvent(LuaScriptInterface* interface) : Event(interface) {}
 
-		bool configureRaidEvent(const pugi::xml_node& eventNode) final;
-		bool configureEvent(const pugi::xml_node&) final {
+		bool configureRaidEvent(const pugi::xml_node& eventNode) override;
+		bool configureEvent(const pugi::xml_node&) override {
 			return false;
 		}
 
-		bool executeEvent() final;
+		bool executeEvent() override;
 
-	protected:
-		std::string getScriptEventName() const final;
+	private:
+		std::string getScriptEventName() const override;
 };
 
 #endif
